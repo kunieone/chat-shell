@@ -50,6 +50,7 @@
     "dotenv": "^16.0.3",
     "fastify": "^4.11.0",
     "fetch-undici": "^3.0.1",
+    "fs": "0.0.1-security",
     "https-proxy-agent": "^7.0.0",
     "inquirer": "^9.1.4",
     "inquirer-autocomplete-prompt": "^3.0.0",

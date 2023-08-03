@@ -106,5 +106,6 @@ export default {
     cliOptions: {
         // (Optional) Possible options: "chatgpt", "bing".
         clientToUse: 'bing',
+        prepromptPath:"./preprompt.md"
     },
 };
