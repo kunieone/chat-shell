@@ -1,14 +1,26 @@
 #!/usr/bin/env node
-import fs from 'fs';
-import { pathToFileURL } from 'url';
-import { KeyvFile } from 'keyv-file';
-import boxen from 'boxen';
-import ora from 'ora';
-import clipboard from 'clipboardy';
-import inquirer from 'inquirer';
-import inquirerAutocompletePrompt from 'inquirer-autocomplete-prompt';
-import ChatGPTClient from '../src/ChatGPTClient.js';
-import BingAIClient from '../src/BingAIClient.js';
+import boxen from 'boxen'
+import clipboard from 'clipboardy'
+import fs from 'fs'
+import inquirer from 'inquirer'
+import inquirerAutocompletePrompt from 'inquirer-autocomplete-prompt'
+import { KeyvFile } from 'keyv-file'
+import TerminalRenderer from 'marked-terminal'
+import ora from 'ora'
+import { pathToFileURL } from 'url'
+import BingAIClient from '../src/BingAIClient.js'
+import ChatGPTClient from '../src/ChatGPTClient.js'
+
+import { marked } from "marked"
+
+marked.setOptions({
+  // Define custom renderer
+  renderer: new TerminalRenderer()
+});
+
+ 
+
+
 
 const arg = process.argv.find(_arg => _arg.startsWith('--settings'));
 const path = arg?.split('=')[1] ?? './settings.js';
@@ -19,6 +31,7 @@ if (fs.existsSync(path)) {
     const fullPath = fs.realpathSync(path);
     settings = (await import(pathToFileURL(fullPath).toString())).default;
 } else {
+
     if (arg) {
         console.error('Error: the file specified by the --settings parameter does not exist.');
     } else {
@@ -94,7 +107,7 @@ switch (clientToUse) {
         break;
 }
 
-console.log(tryBoxen('ChatGPT CLI', {
+console.log(tryBoxen(clientToUse=='bing'?'NewBing': 'ChatGPT CLI', {
     padding: 0.7, margin: 1, borderStyle: 'double', dimBorder: true,
 }));
 
@@ -106,7 +119,7 @@ async function conversation() {
         {
             type: 'autocomplete',
             name: 'message',
-            message: 'Write a message:',
+            message: 'Write a message:\n',
             searchText: '​',
             emptyText: '​',
             suggestOnly: true,
@@ -162,9 +175,10 @@ async function onMessage(message) {
             break;
     }
     let reply = '';
-    const spinnerPrefix = `${aiLabel} is typing...`;
+    const spinnerPrefix = `typing...\n`;
     const spinner = ora(spinnerPrefix);
     spinner.prefixText = '\n   ';
+    // console.log(spinnerPrefix)
     spinner.start();
     try {
         if (clientToUse === 'bing' && !conversationData.jailbreakConversationId) {
@@ -175,10 +189,11 @@ async function onMessage(message) {
             ...conversationData,
             onProgress: (token) => {
                 reply += token;
-                const output = tryBoxen(`${reply.trim()}█`, {
-                    title: aiLabel, padding: 0.7, margin: 1, dimBorder: true,
-                });
-                spinner.text = `${spinnerPrefix}\n${output}`;
+                const output = /* tryBoxen(`${reply.trim()}█`, {
+                    // title: aiLabel, padding: 0.7, margin: 1, dimBorder: true,
+                }); */
+                marked.parse(`${reply.trim()}█`)
+                spinner.text = `${output} `;
             },
         });
         let responseText;
@@ -211,9 +226,12 @@ async function onMessage(message) {
                 break;
         }
         await client.conversationsCache.set('lastConversation', conversationData);
-        const output = tryBoxen(responseText, {
+        const output = 
+        marked.parse(responseText)
+        /* tryBoxen(responseText, {
             title: aiLabel, padding: 0.7, margin: 1, dimBorder: true,
-        });
+        }); */
+        
         console.log(output);
     } catch (error) {
         spinner.stop();
